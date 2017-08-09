@@ -186,11 +186,6 @@ import numpy as np
 from numpy import inf, array
 # to access the built-in sum fct:  ``__builtins__.sum`` or ``del sum``
 # removes the imported sum and recovers the shadowed build-in
-try:
-    from matplotlib import pyplot
-except ImportError:
-    print('Could not import matplotlib.pyplot, therefore ``cma.plot()``" +'
-          ' etc. is not available')
 
 from . import interfaces
 from . import transformations
@@ -4404,7 +4399,8 @@ class CMADataLogger(interfaces.BaseDataLogger):
         self.last_iteration = iteration
 
     def figclose(self):
-        pyplot.close(self.fighandle)
+        from matplotlib.pyplot import close
+        close(self.fighandle)
 
     def save_to(self, nameprefix, switch=False):
         """saves logger data to a different set of files, for
@@ -4483,11 +4479,11 @@ class CMADataLogger(interfaces.BaseDataLogger):
             cma.s.figsave('fig325.png')  # save current figure
             logger.figclose()
 
-        Dependencies: matlabplotlib/pyplot.
+        Dependencies: matlabplotlib.pyplot
 
         """
         try:
-            # pyplot: prodedural interface for matplotlib
+            from matplotlib import pyplot
             from matplotlib.pyplot import figure, subplot, gcf
         except ImportError:
             ImportError('could not find matplotlib.pyplot module, function plot() is not available')
@@ -4600,7 +4596,8 @@ class CMADataLogger(interfaces.BaseDataLogger):
         """
         try:
             # pyplot: prodedural interface for matplotlib
-            from  matplotlib.pyplot import figure, subplot, gcf
+            from matplotlib import pyplot
+            from matplotlib.pyplot import figure, subplot, gcf
         except ImportError:
             ImportError('could not find matplotlib.pyplot module, function plot() is not available')
             return
@@ -4688,6 +4685,7 @@ class CMADataLogger(interfaces.BaseDataLogger):
         self._finalize_plotting()
         return self
     def plot_axes_scaling(self, iabscissa=1):
+        from matplotlib import pyplot
         if not hasattr(self, 'D'):
             self.load()
         dat = self
@@ -4704,6 +4702,7 @@ class CMADataLogger(interfaces.BaseDataLogger):
         self._finalize_plotting()
         return self
     def plot_stds(self, iabscissa=1):
+        from matplotlib import pyplot
         if not hasattr(self, 'std'):
             self.load()
         dat = self
@@ -4813,6 +4812,7 @@ class CMADataLogger(interfaces.BaseDataLogger):
         :See: `plot`
 
         """
+        from matplotlib import pyplot
         from matplotlib.pyplot import semilogy, grid, \
             axis, title, text
         fontsize = pyplot.rcParams['font.size']
@@ -4968,6 +4968,7 @@ class CMADataLogger(interfaces.BaseDataLogger):
         return self
     def _enter_plotting(self, fontsize=7):
         """assumes that a figure is open """
+        from matplotlib import pyplot
         # interactive_status = matplotlib.is_interactive()
         self.original_fontsize = pyplot.rcParams['font.size']
         # if font size deviates from default, we assume this is on purpose and hence leave it alone
@@ -4977,11 +4978,13 @@ class CMADataLogger(interfaces.BaseDataLogger):
         # pyplot.gcf().clear()  # opens a figure window, if non exists
         pyplot.ioff()
     def _finalize_plotting(self):
+        from matplotlib import pyplot
         pyplot.draw()  # update "screen"
         pyplot.ion()  # prevents that the execution stops after plotting
         pyplot.show()
         pyplot.rcParams['font.size'] = self.original_fontsize
     def _xlabel(self, iabscissa=1):
+        from matplotlib import pyplot
         pyplot.xlabel('iterations' if iabscissa == 0
                       else 'function evaluations')
     def _plot_x(self, iabscissa=1, x_opt=None, remark=None,

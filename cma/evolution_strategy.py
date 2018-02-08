@@ -176,6 +176,8 @@ import sys
 import time  # not really essential
 import warnings  # catch numpy warnings
 import ast  # for literal_eval
+import logging
+log = logging.getLogger(__name__)
 try:
     import collections  # not available in Python 2.5
 except ImportError:
@@ -1608,7 +1610,7 @@ class CMAEvolutionStrategy(interfaces.OOOptimizer):
         if opts['verb_disp'] > 0 and opts['verbose'] >= 0:
             sweighted = '_w' if self.sp.weights.mu > 1 else ''
             smirr = 'mirr%d' % (self.sp.lam_mirr) if self.sp.lam_mirr else ''
-            print('(%d' % (self.sp.weights.mu) + sweighted + ',%d' % (self.sp.popsize) + smirr +
+            log.info('(%d' % (self.sp.weights.mu) + sweighted + ',%d' % (self.sp.popsize) + smirr +
                   ')-' + ('a' if opts['CMA_active'] else '') + 'CMA-ES' +
                   ' (mu_w=%2.1f,w_1=%d%%)' % (self.sp.weights.mueff, int(100 * self.sp.weights[0])) +
                   ' in dimension %d (seed=%d, %s)' % (N, opts['seed'], time.asctime()))  # + func.__name__
@@ -1622,7 +1624,7 @@ class CMAEvolutionStrategy(interfaces.OOOptimizer):
                         s += str(np.floor(opts['CMA_diagonal']))
                     s += ' iterations'
                     s += ' (1/ccov=' + str(round(1. / (self.sp.c1 + self.sp.cmu))) + ')'
-                print('   Covariance matrix is diagonal' + s)
+                    log.info('   Covariance matrix is diagonal' + s)
 
     def _set_x0(self, x0):
         if utils.is_str(x0):
@@ -2762,17 +2764,17 @@ class CMAEvolutionStrategy(interfaces.OOOptimizer):
         s = (' after %i restart' + ('s' if number_of_runs > 1 else '')) \
             % number_of_runs if number_of_runs else ''
         for k, v in self.stop().items():
-            print('termination on %s=%s%s' % (k, str(v), s +
+            log.info('termination on %s=%s%s' % (k, str(v), s +
                   (' (%s)' % time_str if time_str else '')))
 
-        print('final/bestever f-value = %e %e' % (self.best.last.f,
+        log.info('final/bestever f-value = %e %e' % (self.best.last.f,
                                                   fbestever))
         if self.N < 9:
-            print('incumbent solution: ' + str(list(self.gp.pheno(self.mean, into_bounds=self.boundary_handler.repair))))
-            print('std deviation: ' + str(list(self.sigma * self.sigma_vec.scaling * np.sqrt(self.dC) * self.gp.scales)))
+            log.info('incumbent solution: ' + str(list(self.gp.pheno(self.mean, into_bounds=self.boundary_handler.repair))))
+            log.info('std deviation: ' + str(list(self.sigma * self.sigma_vec.scaling * np.sqrt(self.dC) * self.gp.scales)))
         else:
-            print('incumbent solution: %s ...]' % (str(self.gp.pheno(self.mean, into_bounds=self.boundary_handler.repair)[:8])[:-1]))
-            print('std deviations: %s ...]' % (str((self.sigma * self.sigma_vec.scaling * np.sqrt(self.dC) * self.gp.scales)[:8])[:-1]))
+            log.info('incumbent solution: %s ...]' % (str(self.gp.pheno(self.mean, into_bounds=self.boundary_handler.repair)[:8])[:-1]))
+            log.info('std deviations: %s ...]' % (str((self.sigma * self.sigma_vec.scaling * np.sqrt(self.dC) * self.gp.scales)[:8])[:-1]))
         return self.result
 
     def repair_genotype(self, x, copy_if_changed=False):
@@ -3110,8 +3112,9 @@ class CMAEvolutionStrategy(interfaces.OOOptimizer):
 
     def disp_annotation(self):
         """print annotation line for `disp` ()"""
-        print('Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]')
-        sys.stdout.flush()
+        pass
+        # print('Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]')
+        # sys.stdout.flush()
 
     def disp(self, modulo=None):
         """print current state variables in a single-line.
@@ -3142,18 +3145,15 @@ class CMAEvolutionStrategy(interfaces.OOOptimizer):
                     stime = str(int(toc // 60)) + ':' + ("%2.1f" % (toc % 60)).rjust(4, '0')
                 else:
                     stime = ''
-                print(' '.join((repr(self.countiter).rjust(5),
-                                repr(self.countevals).rjust(6),
-                                '%.15e' % (min(self.fit.fit)),
-                                '%4.1e' % (self.D.max() / self.D.min()
+                log.info(' '.join(('Iter: ', repr(self.countiter),
+                                '#Fevals: ', repr(self.countevals),
+                                'function value: %.15e' % (min(self.fit.fit)),
+                                'axis: %4.1e' % (self.D.max() / self.D.min()
                                            if not self.opts['CMA_diagonal'] or self.countiter > self.opts['CMA_diagonal']
                                            else max(self.sigma_vec*1) / min(self.sigma_vec*1)),
-                                '%6.2e' % self.sigma,
-                                '%6.0e' % (self.sigma * min(self.sigma_vec * self.dC**0.5)),
-                                '%6.0e' % (self.sigma * max(self.sigma_vec * self.dC**0.5)),
-                                stime)))
-                # if self.countiter < 4:
-                sys.stdout.flush()
+                                'sigma: %6.2e' % self.sigma,
+                                'min: %6.0e' % (self.sigma * min(self.sigma_vec * self.dC**0.5)),
+                                'max: %6.0e' % (self.sigma * max(self.sigma_vec * self.dC**0.5)))))
         return self
     def plot(self):
         """plot current state variables using `matplotlib`.
